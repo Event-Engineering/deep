@@ -1,0 +1,36 @@
+{
+	"name": "@eventengineering/deep",
+	"version": "1.0.0",
+	"description": "Provides 'deep' tools for objects and arrays in pure JavaScript",
+	"main": "index.js",
+	"type": "module",
+	"dependencies": {
+		"eslint": "^8.29.0"
+	},
+	"devDependencies": {
+		"tape": "^4.5.1"
+	},
+	"scripts": {
+		"lint": "eslint --ext .js,.mjs,.cjs .",
+		"test": "tape test/*.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Event-Engineering/deep.git"
+	},
+	"keywords": [
+		"assign",
+		"deep",
+		"diff",
+		"iterative"
+	],
+	"author": "Event Engineering Ltd",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/Event-Engineering/deep/issues"
+	},
+	"homepage": "https://github.com/Event-Engineering/bonjour",
+	"volta": {
+		"node": "24.14.0"
+	}
+}
