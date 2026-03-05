@@ -41,23 +41,23 @@ deepDiff({ a: 1, b: 2 }, { a: 1, b: 99 });
 // => { b: 99 }
 
 deepDiff({ a: 1 }, { a: 1, b: 2 });
-// => {} (new key excluded by default)
+// => { b: 2 } (new key included by default)
 ```
 
 #### Flags
 
 | Constant | Value | Effect |
 |---|---|---|
-| `DEEP_ADDITIONAL_KEYS` | `1` | Include keys present in `edit` but not in `original` |
-| `DEEP_REMOVED_KEYS` | `2` | Include keys present in `original` but not in `edit` (as `undefined`) |
+| `DEEP_HIDE_ADDITIONAL_KEYS` | `1` | Exclude keys present in `edit` but not in `original` |
+| `DEEP_SHOW_REMOVED_KEYS` | `2` | Include keys present in `original` but not in `edit` (as `undefined`) |
 
 ```js
-import { deepDiff, DEEP_ADDITIONAL_KEYS, DEEP_REMOVED_KEYS } from '@eventengineering/deep';
+import { deepDiff, DEEP_HIDE_ADDITIONAL_KEYS, DEEP_SHOW_REMOVED_KEYS } from '@eventengineering/deep';
 
-deepDiff({ a: 1 }, { a: 1, b: 2 }, DEEP_ADDITIONAL_KEYS);
-// => { b: 2 }
+deepDiff({ a: 1 }, { a: 1, b: 2 }, DEEP_HIDE_ADDITIONAL_KEYS);
+// => { }
 
-deepDiff({ a: 1, b: 2 }, { a: 1 }, DEEP_REMOVED_KEYS);
+deepDiff({ a: 1, b: 2 }, { a: 1 }, DEEP_SHOW_REMOVED_KEYS);
 // => { b: undefined }
 ```
 

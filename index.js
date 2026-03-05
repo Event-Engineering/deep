@@ -1,5 +1,5 @@
-export const DEEP_ADDITIONAL_KEYS = 1;
-export const DEEP_REMOVED_KEYS = 2;
+export const DEEP_HIDE_ADDITIONAL_KEYS = 1;
+export const DEEP_SHOW_REMOVED_KEYS = 2;
 
 export function deepAssign(target, value) {
 	Object.entries(value)
@@ -29,8 +29,8 @@ export function deepAssign(target, value) {
 }
 
 export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
-	let includeAdditionalKeys = ((flags & DEEP_ADDITIONAL_KEYS) === DEEP_ADDITIONAL_KEYS);
-	let includeRemovedKeys = ((flags & DEEP_REMOVED_KEYS) === DEEP_REMOVED_KEYS);
+	let showAdditionalKeys = ! ((flags & DEEP_HIDE_ADDITIONAL_KEYS) === DEEP_HIDE_ADDITIONAL_KEYS);
+	let showRemovedKeys = ((flags & DEEP_SHOW_REMOVED_KEYS) === DEEP_SHOW_REMOVED_KEYS);
 
 	let diff = Object.entries(edit)
 	.map(([key, datum]) => {
@@ -39,14 +39,14 @@ export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
 		}
 
 		if (datum && original[key] && datum instanceof Object && original[key] instanceof Object && Array.isArray(datum) === Array.isArray(original[key])) {
-			let diff = deepDiff(original[key], datum, includeAdditionalKeys, ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v));
+			let diff = deepDiff(original[key], datum, showAdditionalKeys, ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v));
 			return [key, diff, diff && (Array.isArray(diff) || !! Object.keys(diff).length)];
 		} else {
-			return [key, datum, (includeAdditionalKeys || original.hasOwnProperty(key)) && original[key] !== datum];
+			return [key, datum, (showAdditionalKeys || original.hasOwnProperty(key)) && original[key] !== datum];
 		}
 	});
 
-	if (includeRemovedKeys) { // TODO
+	if (showRemovedKeys) { // TODO
 		diff.push(...Object.entries(original)
 		.filter(([key]) => ! edit.hasOwnProperty(key))
 		.map(([key]) => [key, undefined, true]));

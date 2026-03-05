@@ -1,5 +1,5 @@
 import test from 'tape';
-import { deepAssign, deepDiff, DEEP_ADDITIONAL_KEYS, DEEP_REMOVED_KEYS } from '../index.js';
+import { deepAssign, deepDiff, DEEP_HIDE_ADDITIONAL_KEYS, DEEP_SHOW_REMOVED_KEYS } from '../index.js';
 
 // ─── deepAssign ──────────────────────────────────────────────────────────────
 
@@ -78,20 +78,20 @@ test('deepDiff: returns empty object when nothing changed', (t) => {
 	t.end();
 });
 
-test('deepDiff: excludes additional keys by default', (t) => {
+test('deepDiff: includes additional keys by default', (t) => {
 	let diff = deepDiff({ a: 1 }, { a: 1, b: 2 });
-	t.deepEqual(diff, {});
-	t.end();
-});
-
-test('deepDiff: DEEP_ADDITIONAL_KEYS includes new keys', (t) => {
-	let diff = deepDiff({ a: 1 }, { a: 1, b: 2 }, DEEP_ADDITIONAL_KEYS);
 	t.deepEqual(diff, { b: 2 });
 	t.end();
 });
 
-test('deepDiff: DEEP_REMOVED_KEYS includes missing keys as undefined', (t) => {
-	let diff = deepDiff({ a: 1, b: 2 }, { a: 1 }, DEEP_REMOVED_KEYS);
+test('deepDiff: DEEP_HIDE_ADDITIONAL_KEYS hides new keys', (t) => {
+	let diff = deepDiff({ a: 1 }, { a: 1, b: 2 }, DEEP_HIDE_ADDITIONAL_KEYS);
+	t.deepEqual(diff, {});
+	t.end();
+});
+
+test('deepDiff: DEEP_SHOW_REMOVED_KEYS includes missing keys as undefined', (t) => {
+	let diff = deepDiff({ a: 1, b: 2 }, { a: 1 }, DEEP_SHOW_REMOVED_KEYS);
 	t.ok(diff.hasOwnProperty('b'));
 	t.equal(diff.b, undefined);
 	t.end();
