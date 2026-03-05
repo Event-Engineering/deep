@@ -50,6 +50,9 @@ deepDiff({ a: 1 }, { a: 1, b: 2 });
 |---|---|---|
 | `DEEP_HIDE_ADDITIONAL_KEYS` | `1` | Exclude keys present in `edit` but not in `original` |
 | `DEEP_SHOW_REMOVED_KEYS` | `2` | Include keys present in `original` but not in `edit` (as `undefined`) |
+| `DEEP_PROPAGATE_IGNORE_KEYS` | `4` | Propagate each `ignoreKeys` entry into all descendant levels (see below) |
+
+Flags can be combined with bitwise OR.
 
 ```js
 import { deepDiff, DEEP_HIDE_ADDITIONAL_KEYS, DEEP_SHOW_REMOVED_KEYS } from '@eventengineering/deep';
@@ -63,11 +66,32 @@ deepDiff({ a: 1, b: 2 }, { a: 1 }, DEEP_SHOW_REMOVED_KEYS);
 
 #### `ignoreKeys`
 
-An array of key names to exclude from the diff. Supports dot-notation for nested keys (e.g. `'b.c'` will be scoped as recursion descends into `b`).
+An array of key names to exclude from the diff.
+
+**Default behaviour:**
+
+Each entry is matched only at its exact depth. A flat key (e.g. `'b'`) ignores only the top-level key; a dot-notation key (e.g. `'a.b'`) ignores only the direct child named by the final segment.
 
 ```js
-deepDiff({ a: 1, b: 2 }, { a: 99, b: 99 }, 0, ['b']);
-// => { a: 99 }
+deepDiff({ a: { b: 1 }, b: 2 }, { a: { b: 99 }, b: 99 }, 0, ['b']);
+// => { a: { b: 99 } }  (top-level 'b' ignored; 'a.b' still diffed)
+
+deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, 0, ['a.b']);
+// => { a: { x: { b: 99 } } }  ('a.b' ignored; 'a.x.b' still diffed)
+```
+
+**With `DEEP_PROPAGATE_IGNORE_KEYS`:**
+
+Flat keys (no dots) are ignored at every depth. Dot-notation keys are unaffected by the flag — they always match at their exact depth regardless.
+
+```js
+import { deepDiff, DEEP_PROPAGATE_IGNORE_KEYS } from '@eventengineering/deep';
+
+deepDiff({ a: { b: 1 }, b: 2 }, { a: { b: 99 }, b: 99 }, DEEP_PROPAGATE_IGNORE_KEYS, ['b']);
+// => { }  ('b' ignored at all depths)
+
+deepDiff({ a: { b: 1, c: { b: 2 } } }, { a: { b: 99, c: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
+// => { a: { c: { b: 99 } } }  ('a.b' ignored; 'a.c.b' is a different path and is still diffed)
 ```
 
 ## License
