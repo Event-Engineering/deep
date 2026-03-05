@@ -37,7 +37,7 @@ export function deepDiff(original, edit, flags = 0, ignoreKeys = [], _path = '')
 	function shouldIgnore(key) {
 		let fullPath = _path ? _path + '.' + key : key;
 		return propagateIgnoreKeys
-			? ignoreKeys.some(v => (! v.includes('.') && v === key) || v === fullPath)
+			? ignoreKeys.some(v => v === fullPath || fullPath.endsWith('.' + v))
 			: ignoreKeys.includes(fullPath);
 	}
 

@@ -263,18 +263,31 @@ test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS makes flat ignoreKey apply at all dep
 	t.end();
 });
 
-test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS does not affect dot-notation keys — they are always exact-depth', (t) => {
-	let diff = deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
-	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'a.b ignored');
-	t.deepEqual(diff.a && diff.a.x, { b: 99 }, 'a.x.b not ignored — dot-notation is exact-depth');
+test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS flat key matches same-named key nested under any parent', (t) => {
+	// 'a' should match b.a, c.b.a, etc — any path ending with the key name
+	let diff = deepDiff({ b: { a: 1 } }, { b: { a: 99 } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a']);
+	t.deepEqual(diff, {}, 'b.a ignored via flat key propagation');
 	t.end();
 });
 
-test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS dot-notation key does not bleed into sibling subtrees', (t) => {
-	// 'a.b' should not also ignore 'a.c.b'
-	let diff = deepDiff({ a: { b: 1, c: { b: 2 } } }, { a: { b: 99, c: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
+test('deepDiff: without DEEP_PROPAGATE_IGNORE_KEYS flat key does not match same-named nested key', (t) => {
+	let diff = deepDiff({ b: { a: 1 } }, { b: { a: 99 } }, 0, ['a']);
+	t.deepEqual(diff, { b: { a: 99 } }, 'b.a not ignored — flat key scoped to top level only');
+	t.end();
+});
+
+test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS dot-notation key matches the same path at any depth', (t) => {
+	// 'a.b' matches c.a.b because the path ends with '.a.b'
+	let diff = deepDiff({ c: { a: { b: 1 } } }, { c: { a: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
+	t.notOk(diff.c && diff.c.a && diff.c.a.hasOwnProperty('b'), 'c.a.b ignored via suffix match');
+	t.end();
+});
+
+test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS dot-notation key does not match partial path segments', (t) => {
+	// 'a.b' should not match a.x.b — the path must end with exactly '.a.b'
+	let diff = deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
 	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'a.b ignored');
-	t.deepEqual(diff.a && diff.a.c, { b: 99 }, 'a.c.b not ignored');
+	t.deepEqual(diff.a && diff.a.x, { b: 99 }, 'a.x.b not ignored — different path');
 	t.end();
 });
 
