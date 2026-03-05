@@ -29,17 +29,22 @@ export function deepAssign(target, value) {
 	return target;
 }
 
+function shouldIgnorePropagate(ignoreKeys, _path, key) {
+	let fullPath = _path ? _path + '.' + key : key;
+
+	return ignoreKeys.some(v => v === fullPath || fullPath.endsWith('.' + v));
+}
+
+function shouldIgnoreScoped(ignoreKeys, _path, key) {
+	return ignoreKeys.includes(_path ? _path + '.' + key : key);
+}
+
 export function deepDiff(original, edit, flags = 0, ignoreKeys = [], _path = '') {
 	let showAdditionalKeys = ! ((flags & DEEP_HIDE_ADDITIONAL_KEYS) === DEEP_HIDE_ADDITIONAL_KEYS);
 	let showRemovedKeys = ((flags & DEEP_SHOW_REMOVED_KEYS) === DEEP_SHOW_REMOVED_KEYS);
 	let propagateIgnoreKeys = ((flags & DEEP_PROPAGATE_IGNORE_KEYS) === DEEP_PROPAGATE_IGNORE_KEYS);
 
-	function shouldIgnore(key) {
-		let fullPath = _path ? _path + '.' + key : key;
-		return propagateIgnoreKeys
-			? ignoreKeys.some(v => v === fullPath || fullPath.endsWith('.' + v))
-			: ignoreKeys.includes(fullPath);
-	}
+	let shouldIgnore = (propagateIgnoreKeys ? shouldIgnorePropagate : shouldIgnoreScoped).bind(null, ignoreKeys, _path);
 
 	let diff = Object.entries(edit)
 	.map(([key, datum]) => {
