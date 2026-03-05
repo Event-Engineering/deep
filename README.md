@@ -82,7 +82,7 @@ deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, 0, ['a.b'
 
 **With `DEEP_PROPAGATE_IGNORE_KEYS`:**
 
-Each entry propagates into all descendant levels. A flat key is ignored at every depth; a dot-notation key strips one path segment as recursion descends, then ignores the remainder at all depths within that subtree.
+Flat keys (no dots) are ignored at every depth. Dot-notation keys are unaffected by the flag — they always match at their exact depth regardless.
 
 ```js
 import { deepDiff, DEEP_PROPAGATE_IGNORE_KEYS } from '@eventengineering/deep';
@@ -90,8 +90,8 @@ import { deepDiff, DEEP_PROPAGATE_IGNORE_KEYS } from '@eventengineering/deep';
 deepDiff({ a: { b: 1 }, b: 2 }, { a: { b: 99 }, b: 99 }, DEEP_PROPAGATE_IGNORE_KEYS, ['b']);
 // => { }  ('b' ignored at all depths)
 
-deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
-// => { }  ('b' ignored everywhere inside 'a', including 'a.x.b')
+deepDiff({ a: { b: 1, c: { b: 2 } } }, { a: { b: 99, c: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
+// => { a: { c: { b: 99 } } }  ('a.b' ignored; 'a.c.b' is a different path and is still diffed)
 ```
 
 ## License

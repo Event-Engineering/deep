@@ -263,11 +263,18 @@ test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS makes flat ignoreKey apply at all dep
 	t.end();
 });
 
-test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS makes dot-notation key apply at all depths within its scope', (t) => {
-	// ['a.b'] strips to ['b'] inside a, and with propagation 'b' continues deeper; a.x.b also ignored
+test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS does not affect dot-notation keys — they are always exact-depth', (t) => {
 	let diff = deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
 	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'a.b ignored');
-	t.notOk(diff.a && diff.a.x && diff.a.x.hasOwnProperty('b'), 'a.x.b also ignored');
+	t.deepEqual(diff.a && diff.a.x, { b: 99 }, 'a.x.b not ignored — dot-notation is exact-depth');
+	t.end();
+});
+
+test('deepDiff: DEEP_PROPAGATE_IGNORE_KEYS dot-notation key does not bleed into sibling subtrees', (t) => {
+	// 'a.b' should not also ignore 'a.c.b'
+	let diff = deepDiff({ a: { b: 1, c: { b: 2 } } }, { a: { b: 99, c: { b: 99 } } }, DEEP_PROPAGATE_IGNORE_KEYS, ['a.b']);
+	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'a.b ignored');
+	t.deepEqual(diff.a && diff.a.c, { b: 99 }, 'a.c.b not ignored');
 	t.end();
 });
 

@@ -29,22 +29,27 @@ export function deepAssign(target, value) {
 	return target;
 }
 
-export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
+export function deepDiff(original, edit, flags = 0, ignoreKeys = [], _path = '') {
 	let showAdditionalKeys = ! ((flags & DEEP_HIDE_ADDITIONAL_KEYS) === DEEP_HIDE_ADDITIONAL_KEYS);
 	let showRemovedKeys = ((flags & DEEP_SHOW_REMOVED_KEYS) === DEEP_SHOW_REMOVED_KEYS);
 	let propagateIgnoreKeys = ((flags & DEEP_PROPAGATE_IGNORE_KEYS) === DEEP_PROPAGATE_IGNORE_KEYS);
 
+	function shouldIgnore(key) {
+		let fullPath = _path ? _path + '.' + key : key;
+		return propagateIgnoreKeys
+			? ignoreKeys.some(v => (! v.includes('.') && v === key) || v === fullPath)
+			: ignoreKeys.includes(fullPath);
+	}
+
 	let diff = Object.entries(edit)
 	.map(([key, datum]) => {
-		if (ignoreKeys.includes(key)) {
+		if (shouldIgnore(key)) {
 			return [key, null, null];
 		}
 
 		if (datum && original[key] && datum instanceof Object && original[key] instanceof Object && Array.isArray(datum) === Array.isArray(original[key])) {
-			let childIgnoreKeys = propagateIgnoreKeys
-				? ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v)
-				: ignoreKeys.filter(v => v.startsWith(key + '.')).map(v => v.substring(key.length + 1));
-			let diff = deepDiff(original[key], datum, flags, childIgnoreKeys);
+			let fullPath = _path ? _path + '.' + key : key;
+			let diff = deepDiff(original[key], datum, flags, ignoreKeys, fullPath);
 			return [key, diff, diff && (Array.isArray(diff) || !! Object.keys(diff).length)];
 		} else {
 			return [key, datum, (showAdditionalKeys || original.hasOwnProperty(key)) && original[key] !== datum];
@@ -53,7 +58,7 @@ export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
 
 	if (showRemovedKeys) { // TODO
 		diff.push(...Object.entries(original)
-		.filter(([key]) => ! (ignoreKeys.includes(key) || edit.hasOwnProperty(key)))
+		.filter(([key]) => ! (shouldIgnore(key) || edit.hasOwnProperty(key)))
 		.map(([key]) => [key, undefined, true]));
 	}
 
