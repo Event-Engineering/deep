@@ -1,0 +1,7 @@
+test/
+node_modules/
+.eslintignore
+.eslintrc.cjs
+.gitignore
+CLAUDE.md
+package-lock.json
