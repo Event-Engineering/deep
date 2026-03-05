@@ -1,5 +1,5 @@
 import test from 'tape';
-import { deepAssign, deepDiff, DEEP_HIDE_ADDITIONAL_KEYS, DEEP_SHOW_REMOVED_KEYS } from '../index.js';
+import { deepAssign, deepDiff, DEEP_HIDE_ADDITIONAL_KEYS, DEEP_SHOW_REMOVED_KEYS, DEEP_SCOPED_IGNORE_KEYS } from '../index.js';
 
 // ─── deepAssign ──────────────────────────────────────────────────────────────
 
@@ -187,5 +187,101 @@ test('deepDiff: dot-notation ignoreKeys excludes nested key regardless of flags'
 test('deepDiff: dot-notation ignoreKeys excludes nested additional key even without DEEP_HIDE_ADDITIONAL_KEYS', (t) => {
 	let diff = deepDiff({ a: { b: 1 } }, { a: { b: 1, c: 99 } }, 0, ['a.c']);
 	t.ok(diff.a === undefined || ! diff.a.hasOwnProperty('c'), 'nested ignored additional key absent');
+	t.end();
+});
+
+// ─── ignoreKeys scope / leak ──────────────────────────────────────────────────
+
+test('deepDiff: flat ignoreKey ignores same-named key at all depths', (t) => {
+	let diff = deepDiff({ a: { inner: 1 }, inner: 2 }, { a: { inner: 99 }, inner: 99 }, 0, ['inner']);
+	t.notOk(diff.hasOwnProperty('inner'), 'top-level inner ignored');
+	t.notOk(diff.a && diff.a.hasOwnProperty('inner'), 'nested inner also ignored');
+	t.end();
+});
+
+test('deepDiff: dot-notation ignoreKey ignores same-named key at all depths within its scope', (t) => {
+	// ['a.b'] strips to ['b'] inside a, so both a.b and a.x.b are ignored
+	let diff = deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, 0, ['a.b']);
+	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'a.b ignored');
+	t.notOk(diff.a && diff.a.x && diff.a.x.hasOwnProperty('b'), 'a.x.b also ignored');
+	t.end();
+});
+
+// ─── DEEP_SHOW_REMOVED_KEYS in nested objects ─────────────────────────────────
+
+test('deepDiff: DEEP_SHOW_REMOVED_KEYS surfaces removed keys inside nested objects', (t) => {
+	let diff = deepDiff({ a: { b: 1, c: 2 } }, { a: { b: 1 } }, DEEP_SHOW_REMOVED_KEYS);
+	t.ok(diff.a, 'outer key present');
+	t.ok(diff.a.hasOwnProperty('c'), 'removed nested key present');
+	t.equal(diff.a.c, undefined, 'removed nested key is undefined');
+	t.end();
+});
+
+// ─── falsy primitive values ───────────────────────────────────────────────────
+
+test('deepDiff: detects change to 0', (t) => {
+	let diff = deepDiff({ a: 1 }, { a: 0 });
+	t.deepEqual(diff, { a: 0 });
+	t.end();
+});
+
+test('deepDiff: detects change from 0', (t) => {
+	let diff = deepDiff({ a: 0 }, { a: 1 });
+	t.deepEqual(diff, { a: 1 });
+	t.end();
+});
+
+test('deepDiff: detects change to false', (t) => {
+	let diff = deepDiff({ a: true }, { a: false });
+	t.deepEqual(diff, { a: false });
+	t.end();
+});
+
+test('deepDiff: detects change to null', (t) => {
+	let diff = deepDiff({ a: 1 }, { a: null });
+	t.deepEqual(diff, { a: null });
+	t.end();
+});
+
+test('deepDiff: no diff when nested value changes to 0 then back', (t) => {
+	t.deepEqual(deepDiff({ a: { b: 0 } }, { a: { b: 0 } }), {});
+	t.end();
+});
+
+test('deepDiff: detects change inside nested object when sibling is falsy', (t) => {
+	let diff = deepDiff({ a: { b: 0, c: 1 } }, { a: { b: 0, c: 99 } });
+	t.deepEqual(diff, { a: { c: 99 } });
+	t.end();
+});
+
+// ─── DEEP_SCOPED_IGNORE_KEYS ──────────────────────────────────────────────────
+
+test('deepDiff: DEEP_SCOPED_IGNORE_KEYS limits flat ignoreKey to its exact depth', (t) => {
+	// Without the flag, 'inner' is ignored at all depths; with it, only the specified depth is ignored
+	let diff = deepDiff({ a: { inner: 1 }, inner: 2 }, { a: { inner: 99 }, inner: 99 }, DEEP_SCOPED_IGNORE_KEYS, ['inner']);
+	t.notOk(diff.hasOwnProperty('inner'), 'top-level inner ignored');
+	t.deepEqual(diff.a, { inner: 99 }, 'nested inner still visible');
+	t.end();
+});
+
+test('deepDiff: DEEP_SCOPED_IGNORE_KEYS limits dot-notation key to its exact depth', (t) => {
+	// Without the flag, ['a.b'] ignores a.b and a.x.b; with it, only a.b is ignored
+	let diff = deepDiff({ a: { b: 1, x: { b: 2 } } }, { a: { b: 99, x: { b: 99 } } }, DEEP_SCOPED_IGNORE_KEYS, ['a.b']);
+	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'a.b still ignored');
+	t.deepEqual(diff.a && diff.a.x, { b: 99 }, 'a.x.b no longer ignored');
+	t.end();
+});
+
+test('deepDiff: DEEP_SCOPED_IGNORE_KEYS works alongside DEEP_HIDE_ADDITIONAL_KEYS', (t) => {
+	let diff = deepDiff({ a: { b: 1 } }, { a: { b: 99 }, b: 99 }, DEEP_SCOPED_IGNORE_KEYS | DEEP_HIDE_ADDITIONAL_KEYS, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'top-level b ignored');
+	t.deepEqual(diff.a, { b: 99 }, 'nested b still visible');
+	t.end();
+});
+
+test('deepDiff: DEEP_SCOPED_IGNORE_KEYS works alongside DEEP_SHOW_REMOVED_KEYS', (t) => {
+	let diff = deepDiff({ a: { b: 1 }, b: 2 }, { a: { b: 99 } }, DEEP_SCOPED_IGNORE_KEYS | DEEP_SHOW_REMOVED_KEYS, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'top-level b ignored (not shown as removed)');
+	t.deepEqual(diff.a, { b: 99 }, 'nested b still visible');
 	t.end();
 });

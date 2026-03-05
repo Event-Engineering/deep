@@ -1,5 +1,6 @@
 export const DEEP_HIDE_ADDITIONAL_KEYS = 1;
 export const DEEP_SHOW_REMOVED_KEYS = 2;
+export const DEEP_SCOPED_IGNORE_KEYS = 4;
 
 export function deepAssign(target, value) {
 	Object.entries(value)
@@ -31,6 +32,7 @@ export function deepAssign(target, value) {
 export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
 	let showAdditionalKeys = ! ((flags & DEEP_HIDE_ADDITIONAL_KEYS) === DEEP_HIDE_ADDITIONAL_KEYS);
 	let showRemovedKeys = ((flags & DEEP_SHOW_REMOVED_KEYS) === DEEP_SHOW_REMOVED_KEYS);
+	let scopedIgnoreKeys = ((flags & DEEP_SCOPED_IGNORE_KEYS) === DEEP_SCOPED_IGNORE_KEYS);
 
 	let diff = Object.entries(edit)
 	.map(([key, datum]) => {
@@ -39,7 +41,10 @@ export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
 		}
 
 		if (datum && original[key] && datum instanceof Object && original[key] instanceof Object && Array.isArray(datum) === Array.isArray(original[key])) {
-			let diff = deepDiff(original[key], datum, flags, ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v));
+			let childIgnoreKeys = scopedIgnoreKeys
+				? ignoreKeys.filter(v => v.startsWith(key + '.')).map(v => v.substring(key.length + 1))
+				: ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v);
+			let diff = deepDiff(original[key], datum, flags, childIgnoreKeys);
 			return [key, diff, diff && (Array.isArray(diff) || !! Object.keys(diff).length)];
 		} else {
 			return [key, datum, (showAdditionalKeys || original.hasOwnProperty(key)) && original[key] !== datum];
