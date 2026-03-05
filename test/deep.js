@@ -138,3 +138,54 @@ test('deepDiff: ignoreKeys excludes specified keys', (t) => {
 	t.deepEqual(diff, { a: 99 });
 	t.end();
 });
+
+test('deepDiff: ignoreKeys excludes additional keys even without DEEP_HIDE_ADDITIONAL_KEYS', (t) => {
+	// 'b' is new in edit; without ignoreKeys it would appear, but it must be suppressed
+	let diff = deepDiff({ a: 1 }, { a: 1, b: 99 }, 0, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'ignored additional key absent');
+	t.deepEqual(diff, {});
+	t.end();
+});
+
+test('deepDiff: ignoreKeys excludes removed keys even with DEEP_SHOW_REMOVED_KEYS', (t) => {
+	// 'b' exists only in original; with DEEP_SHOW_REMOVED_KEYS it would appear as undefined, but must be suppressed
+	let diff = deepDiff({ a: 1, b: 2 }, { a: 1 }, DEEP_SHOW_REMOVED_KEYS, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'ignored removed key absent');
+	t.deepEqual(diff, {});
+	t.end();
+});
+
+test('deepDiff: ignoreKeys excludes changed keys regardless of DEEP_HIDE_ADDITIONAL_KEYS', (t) => {
+	let diff = deepDiff({ a: 1, b: 2 }, { a: 99, b: 99 }, DEEP_HIDE_ADDITIONAL_KEYS, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'ignored key absent with DEEP_HIDE_ADDITIONAL_KEYS');
+	t.deepEqual(diff, { a: 99 });
+	t.end();
+});
+
+test('deepDiff: ignoreKeys excludes changed keys regardless of DEEP_SHOW_REMOVED_KEYS', (t) => {
+	let diff = deepDiff({ a: 1, b: 2 }, { a: 99, b: 99 }, DEEP_SHOW_REMOVED_KEYS, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'ignored key absent with DEEP_SHOW_REMOVED_KEYS');
+	t.deepEqual(diff, { a: 99 });
+	t.end();
+});
+
+test('deepDiff: ignoreKeys excludes keys regardless of both flags combined', (t) => {
+	let diff = deepDiff({ a: 1, b: 2 }, { a: 99, b: 99 }, DEEP_HIDE_ADDITIONAL_KEYS | DEEP_SHOW_REMOVED_KEYS, ['b']);
+	t.notOk(diff.hasOwnProperty('b'), 'ignored key absent with both flags');
+	t.deepEqual(diff, { a: 99 });
+	t.end();
+});
+
+test('deepDiff: dot-notation ignoreKeys excludes nested key regardless of flags', (t) => {
+	let diff = deepDiff({ a: { b: 1, c: 2 } }, { a: { b: 99, c: 99 } }, 0, ['a.b']);
+	t.ok(diff.a, 'outer key present');
+	t.notOk(diff.a && diff.a.hasOwnProperty('b'), 'nested ignored key absent');
+	t.deepEqual(diff, { a: { c: 99 } });
+	t.end();
+});
+
+test('deepDiff: dot-notation ignoreKeys excludes nested additional key even without DEEP_HIDE_ADDITIONAL_KEYS', (t) => {
+	let diff = deepDiff({ a: { b: 1 } }, { a: { b: 1, c: 99 } }, 0, ['a.c']);
+	t.ok(diff.a === undefined || ! diff.a.hasOwnProperty('c'), 'nested ignored additional key absent');
+	t.end();
+});

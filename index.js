@@ -48,7 +48,7 @@ export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
 
 	if (showRemovedKeys) { // TODO
 		diff.push(...Object.entries(original)
-		.filter(([key]) => ! edit.hasOwnProperty(key))
+		.filter(([key]) => ! (ignoreKeys.includes(key) || edit.hasOwnProperty(key)))
 		.map(([key]) => [key, undefined, true]));
 	}
 
