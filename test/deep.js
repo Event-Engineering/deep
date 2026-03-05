@@ -103,6 +103,18 @@ test('deepDiff: recurses into nested objects', (t) => {
 	t.end();
 });
 
+test('deepDiff: DEEP_HIDE_ADDITIONAL_KEYS applies to nested objects', (t) => {
+	let diff = deepDiff({ a: { b: 1 } }, { a: { b: 1, c: 2 } }, DEEP_HIDE_ADDITIONAL_KEYS);
+	t.deepEqual(diff, {}, 'nested additional key hidden');
+	t.end();
+});
+
+test('deepDiff: includes additional keys in nested objects by default', (t) => {
+	let diff = deepDiff({ a: { b: 1 } }, { a: { b: 1, c: 2 } });
+	t.deepEqual(diff, { a: { c: 2 } });
+	t.end();
+});
+
 test('deepDiff: returns null for arrays with no changes', (t) => {
 	let diff = deepDiff([1, 2, 3], [1, 2, 3]);
 	t.equal(diff, null);

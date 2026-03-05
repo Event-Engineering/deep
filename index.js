@@ -39,7 +39,7 @@ export function deepDiff(original, edit, flags = 0, ignoreKeys = []) {
 		}
 
 		if (datum && original[key] && datum instanceof Object && original[key] instanceof Object && Array.isArray(datum) === Array.isArray(original[key])) {
-			let diff = deepDiff(original[key], datum, showAdditionalKeys, ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v));
+			let diff = deepDiff(original[key], datum, flags, ignoreKeys.map(v => v.startsWith(key + '.') ? v.substring(key.length + 1) : v));
 			return [key, diff, diff && (Array.isArray(diff) || !! Object.keys(diff).length)];
 		} else {
 			return [key, datum, (showAdditionalKeys || original.hasOwnProperty(key)) && original[key] !== datum];
