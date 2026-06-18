@@ -3,28 +3,30 @@ export const DEEP_SHOW_REMOVED_KEYS = 2;
 export const DEEP_PROPAGATE_IGNORE_KEYS = 4;
 
 export function deepAssign(target, value) {
-	Object.entries(value)
-	.forEach(([key, value]) => {
-		if (target[key]) {
-			if ((target[key] instanceof Object) !== (value instanceof Object) || (Array.isArray(target[key]) !== Array.isArray(value))) {
-				console.warn('Ignoring update of mismatched type', {key, value, original: target[key]});
+	if (target) {
+		if ((target instanceof Object) !== (value instanceof Object) || (Array.isArray(target) !== Array.isArray(value))) {
+			console.warn('Ignoring update of mismatched type', {value, original: target});
 
-				return;
-			}
-		} else if (value instanceof Object) {
-			target[key] = Array.isArray(value) ? [] : {};
+			return target;
 		}
+	} else if (value instanceof Object) {
+		target = Array.isArray(value) ? [] : {};
+	}
 
-		if (value instanceof Object) {
-			if (Array.isArray(value)) {
-				target[key].splice(0, target[key].length);
-			}
+	if ( ! (value instanceof Object)) {
+		return value;
+	}
 
-			return deepAssign(target[key], value);
-		}
+	if (Array.isArray(value)) {
+		let original = target.splice(0, target.length);
 
-		return target[key] = value;
-	});
+		target.push(...value.map((v, k) => deepAssign(original[k], v)));
+	} else {
+		Object.entries(value)
+		.forEach(([key, value]) => {
+			return target[key] = deepAssign(target[key], value);
+		});
+	}
 
 	return target;
 }
