@@ -4,14 +4,15 @@
 	"description": "Provides 'deep' tools for objects and arrays in pure JavaScript",
 	"main": "index.js",
 	"type": "module",
-	"dependencies": {
-		"eslint": "^8.29.0"
-	},
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@stylistic/eslint-plugin": "^5.10.0",
+		"eslint": "^10.3.0",
 		"tape": "^4.5.1"
 	},
 	"scripts": {
-		"lint": "eslint --ext .js,.mjs,.cjs .",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
 		"test": "tape test/*.js"
 	},
 	"repository": {
